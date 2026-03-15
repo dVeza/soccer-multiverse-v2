@@ -6,6 +6,10 @@ from sqlmodel import Session, col, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import (
+    Match,
+    MatchEvent,
+    MatchEventType,
+    MatchStatus,
     Player,
     PlayerCreate,
     PlayerUpdate,
@@ -143,27 +147,26 @@ def get_player(*, session: Session, id: uuid.UUID) -> Player | None:
     return session.get(Player, id)
 
 
-def get_players_by_universe(
+def get_players(
     *,
     session: Session,
-    universe_id: uuid.UUID,
+    universe_id: uuid.UUID | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Player], int]:
-    count_statement = (
-        select(func.count())
-        .select_from(Player)
-        .where(Player.universe_id == universe_id)
-    )
+    count_statement = select(func.count()).select_from(Player)
+    statement = select(Player)
+    if universe_id is not None:
+        count_statement = count_statement.where(Player.universe_id == universe_id)
+        statement = statement.where(Player.universe_id == universe_id)
     count = session.exec(count_statement).one()
-    statement = (
-        select(Player)
-        .where(Player.universe_id == universe_id)
-        .order_by(col(Player.created_at).desc())
-        .offset(skip)
-        .limit(limit)
+    players = list(
+        session.exec(
+            statement.order_by(col(Player.created_at).desc())
+            .offset(skip)
+            .limit(limit)
+        ).all()
     )
-    players = list(session.exec(statement).all())
     return players, count
 
 
@@ -211,27 +214,26 @@ def get_team(*, session: Session, id: uuid.UUID) -> Team | None:
     return session.get(Team, id)
 
 
-def get_teams_by_universe(
+def get_teams(
     *,
     session: Session,
-    universe_id: uuid.UUID,
+    universe_id: uuid.UUID | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Team], int]:
-    count_statement = (
-        select(func.count())
-        .select_from(Team)
-        .where(Team.universe_id == universe_id)
-    )
+    count_statement = select(func.count()).select_from(Team)
+    statement = select(Team)
+    if universe_id is not None:
+        count_statement = count_statement.where(Team.universe_id == universe_id)
+        statement = statement.where(Team.universe_id == universe_id)
     count = session.exec(count_statement).one()
-    statement = (
-        select(Team)
-        .where(Team.universe_id == universe_id)
-        .order_by(col(Team.created_at).desc())
-        .offset(skip)
-        .limit(limit)
+    teams = list(
+        session.exec(
+            statement.order_by(col(Team.created_at).desc())
+            .offset(skip)
+            .limit(limit)
+        ).all()
     )
-    teams = list(session.exec(statement).all())
     return teams, count
 
 
@@ -264,3 +266,98 @@ def assign_player_to_team(
     session.commit()
     session.refresh(player)
     return player
+
+
+# ==================== Match CRUD ====================
+
+
+def create_match(
+    *,
+    session: Session,
+    universe_id: uuid.UUID,
+    home_team_id: uuid.UUID,
+    away_team_id: uuid.UUID,
+) -> Match:
+    db_match = Match(
+        universe_id=universe_id,
+        home_team_id=home_team_id,
+        away_team_id=away_team_id,
+        status=MatchStatus.PENDING,
+    )
+    session.add(db_match)
+    session.commit()
+    session.refresh(db_match)
+    return db_match
+
+
+def get_match(*, session: Session, id: uuid.UUID) -> Match | None:
+    return session.get(Match, id)
+
+
+def get_matches(
+    *,
+    session: Session,
+    universe_id: uuid.UUID | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> tuple[list[Match], int]:
+    count_statement = select(func.count()).select_from(Match)
+    statement = select(Match)
+    if universe_id is not None:
+        count_statement = count_statement.where(Match.universe_id == universe_id)
+        statement = statement.where(Match.universe_id == universe_id)
+    count = session.exec(count_statement).one()
+    matches = list(
+        session.exec(
+            statement.order_by(col(Match.created_at).desc())
+            .offset(skip)
+            .limit(limit)
+        ).all()
+    )
+    return matches, count
+
+
+def update_match_status(
+    *, session: Session, db_match: Match, status: MatchStatus
+) -> Match:
+    db_match.status = status
+    session.add(db_match)
+    session.commit()
+    session.refresh(db_match)
+    return db_match
+
+
+def update_match_score(
+    *,
+    session: Session,
+    db_match: Match,
+    home_score: int,
+    away_score: int,
+) -> Match:
+    db_match.home_score = home_score
+    db_match.away_score = away_score
+    session.add(db_match)
+    session.commit()
+    session.refresh(db_match)
+    return db_match
+
+
+def create_match_events_bulk(
+    *, session: Session, events: list[MatchEvent]
+) -> list[MatchEvent]:
+    session.add_all(events)
+    session.commit()
+    for event in events:
+        session.refresh(event)
+    return events
+
+
+def get_match_events(
+    *, session: Session, match_id: uuid.UUID
+) -> list[MatchEvent]:
+    statement = (
+        select(MatchEvent)
+        .where(MatchEvent.match_id == match_id)
+        .order_by(col(MatchEvent.minute).asc(), col(MatchEvent.created_at).asc())
+    )
+    return list(session.exec(statement).all())

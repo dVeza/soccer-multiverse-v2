@@ -1,4 +1,4 @@
-import { Briefcase, Home, Users } from "lucide-react"
+import { Home, Shield, Swords, UserRound, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -14,7 +14,9 @@ import { User } from "./User"
 
 const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
-  { icon: Briefcase, title: "Items", path: "/items" },
+  { icon: UserRound, title: "Players", path: "/players" },
+  { icon: Shield, title: "Teams", path: "/teams" },
+  { icon: Swords, title: "Matches", path: "/matches" },
 ]
 
 export function AppSidebar() {

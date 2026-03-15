@@ -3,118 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
-
-export class ItemsService {
-    /**
-     * Read Items
-     * Retrieve items.
-     * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
-     * @returns ItemsPublic Successful Response
-     * @throws ApiError
-     */
-    public static readItems(data: ItemsReadItemsData = {}): CancelablePromise<ItemsReadItemsResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/items/',
-            query: {
-                skip: data.skip,
-                limit: data.limit
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Create Item
-     * Create new item.
-     * @param data The data for the request.
-     * @param data.requestBody
-     * @returns ItemPublic Successful Response
-     * @throws ApiError
-     */
-    public static createItem(data: ItemsCreateItemData): CancelablePromise<ItemsCreateItemResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/items/',
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Read Item
-     * Get item by ID.
-     * @param data The data for the request.
-     * @param data.id
-     * @returns ItemPublic Successful Response
-     * @throws ApiError
-     */
-    public static readItem(data: ItemsReadItemData): CancelablePromise<ItemsReadItemResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/items/{id}',
-            path: {
-                id: data.id
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Update Item
-     * Update an item.
-     * @param data The data for the request.
-     * @param data.id
-     * @param data.requestBody
-     * @returns ItemPublic Successful Response
-     * @throws ApiError
-     */
-    public static updateItem(data: ItemsUpdateItemData): CancelablePromise<ItemsUpdateItemResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/v1/items/{id}',
-            path: {
-                id: data.id
-            },
-            body: data.requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-    
-    /**
-     * Delete Item
-     * Delete an item.
-     * @param data The data for the request.
-     * @param data.id
-     * @returns Message Successful Response
-     * @throws ApiError
-     */
-    public static deleteItem(data: ItemsDeleteItemData): CancelablePromise<ItemsDeleteItemResponse> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/items/{id}',
-            path: {
-                id: data.id
-            },
-            errors: {
-                422: 'Validation Error'
-            }
-        });
-    }
-}
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, MatchesSimulateMatchEndpointData, MatchesSimulateMatchEndpointResponse, MatchesReadMatchesData, MatchesReadMatchesResponse, MatchesReadMatchData, MatchesReadMatchResponse, MatchesStreamMatchEventsData, MatchesStreamMatchEventsResponse, PlayersReadPlayersData, PlayersReadPlayersResponse, PlayersCreatePlayerData, PlayersCreatePlayerResponse, PlayersReadPlayerData, PlayersReadPlayerResponse, PlayersUpdatePlayerData, PlayersUpdatePlayerResponse, PlayersDeletePlayerData, PlayersDeletePlayerResponse, PrivateCreateUserData, PrivateCreateUserResponse, TeamsReadTeamsData, TeamsReadTeamsResponse, TeamsReadTeamData, TeamsReadTeamResponse, TeamsDeleteTeamData, TeamsDeleteTeamResponse, TeamsGenerateTeamEndpointData, TeamsGenerateTeamEndpointResponse, UniversesReadUniversesData, UniversesReadUniversesResponse, UniversesCreateUniverseData, UniversesCreateUniverseResponse, UniversesReadUniverseData, UniversesReadUniverseResponse, UniversesUpdateUniverseData, UniversesUpdateUniverseResponse, UniversesDeleteUniverseData, UniversesDeleteUniverseResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -213,6 +102,210 @@ export class LoginService {
     }
 }
 
+export class MatchesService {
+    /**
+     * Simulate Match Endpoint
+     * Simulate a match between two teams. Creates the match, runs the
+     * simulation engine, persists all events, and returns the completed match.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns MatchPublic Successful Response
+     * @throws ApiError
+     */
+    public static simulateMatchEndpoint(data: MatchesSimulateMatchEndpointData): CancelablePromise<MatchesSimulateMatchEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/matches/simulate',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Matches
+     * Retrieve matches, optionally filtered by universe.
+     * @param data The data for the request.
+     * @param data.universeId
+     * @param data.skip
+     * @param data.limit
+     * @returns MatchesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readMatches(data: MatchesReadMatchesData = {}): CancelablePromise<MatchesReadMatchesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/matches/',
+            query: {
+                universe_id: data.universeId,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Match
+     * Get match by ID with team details and all events.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns MatchPublicWithDetails Successful Response
+     * @throws ApiError
+     */
+    public static readMatch(data: MatchesReadMatchData): CancelablePromise<MatchesReadMatchResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/matches/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Stream Match Events
+     * Stream match events via SSE for a live ticker experience.
+     * Events are streamed with artificial delays to simulate real-time playback.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static streamMatchEvents(data: MatchesStreamMatchEventsData): CancelablePromise<MatchesStreamMatchEventsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/matches/{id}/stream',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class PlayersService {
+    /**
+     * Read Players
+     * Retrieve players, optionally filtered by universe.
+     * @param data The data for the request.
+     * @param data.universeId
+     * @param data.skip
+     * @param data.limit
+     * @returns PlayersPublic Successful Response
+     * @throws ApiError
+     */
+    public static readPlayers(data: PlayersReadPlayersData = {}): CancelablePromise<PlayersReadPlayersResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/players/',
+            query: {
+                universe_id: data.universeId,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Player
+     * Create new player.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns PlayerPublic Successful Response
+     * @throws ApiError
+     */
+    public static createPlayer(data: PlayersCreatePlayerData): CancelablePromise<PlayersCreatePlayerResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/players/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Player
+     * Get player by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns PlayerPublic Successful Response
+     * @throws ApiError
+     */
+    public static readPlayer(data: PlayersReadPlayerData): CancelablePromise<PlayersReadPlayerResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/players/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Player
+     * Update a player.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns PlayerPublic Successful Response
+     * @throws ApiError
+     */
+    public static updatePlayer(data: PlayersUpdatePlayerData): CancelablePromise<PlayersUpdatePlayerResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/players/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Player
+     * Delete a player.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deletePlayer(data: PlayersDeletePlayerData): CancelablePromise<PlayersDeletePlayerResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/players/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
 export class PrivateService {
     /**
      * Create User
@@ -228,6 +321,210 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class TeamsService {
+    /**
+     * Read Teams
+     * Retrieve teams, optionally filtered by universe.
+     * @param data The data for the request.
+     * @param data.universeId
+     * @param data.skip
+     * @param data.limit
+     * @returns TeamsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readTeams(data: TeamsReadTeamsData = {}): CancelablePromise<TeamsReadTeamsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/teams/',
+            query: {
+                universe_id: data.universeId,
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Team
+     * Get team by ID with players.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns TeamPublicWithPlayers Successful Response
+     * @throws ApiError
+     */
+    public static readTeam(data: TeamsReadTeamData): CancelablePromise<TeamsReadTeamResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/teams/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Team
+     * Delete a team.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteTeam(data: TeamsDeleteTeamData): CancelablePromise<TeamsDeleteTeamResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/teams/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Team Endpoint
+     * Generate a team by assigning random players from a universe to positions.
+     * @param data The data for the request.
+     * @param data.universeId
+     * @param data.requestBody
+     * @returns TeamPublicWithPlayers Successful Response
+     * @throws ApiError
+     */
+    public static generateTeamEndpoint(data: TeamsGenerateTeamEndpointData): CancelablePromise<TeamsGenerateTeamEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/teams/generate',
+            query: {
+                universe_id: data.universeId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class UniversesService {
+    /**
+     * Read Universes
+     * Retrieve universes.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns UniversesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readUniverses(data: UniversesReadUniversesData = {}): CancelablePromise<UniversesReadUniversesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/universes/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Universe
+     * Create new universe.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns UniversePublic Successful Response
+     * @throws ApiError
+     */
+    public static createUniverse(data: UniversesCreateUniverseData): CancelablePromise<UniversesCreateUniverseResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/universes/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Universe
+     * Get universe by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns UniversePublic Successful Response
+     * @throws ApiError
+     */
+    public static readUniverse(data: UniversesReadUniverseData): CancelablePromise<UniversesReadUniverseResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/universes/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Universe
+     * Update a universe.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns UniversePublic Successful Response
+     * @throws ApiError
+     */
+    public static updateUniverse(data: UniversesUpdateUniverseData): CancelablePromise<UniversesUpdateUniverseResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/universes/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Universe
+     * Delete a universe.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteUniverse(data: UniversesDeleteUniverseData): CancelablePromise<UniversesDeleteUniverseResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/universes/{id}',
+            path: {
+                id: data.id
+            },
             errors: {
                 422: 'Validation Error'
             }

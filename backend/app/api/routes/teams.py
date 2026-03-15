@@ -19,15 +19,16 @@ router = APIRouter(prefix="/teams", tags=["teams"])
 @router.get("/", response_model=TeamsPublic)
 def read_teams(
     session: SessionDep,
-    universe_id: uuid.UUID,
+    universe_id: uuid.UUID | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """Retrieve teams for a universe."""
-    universe = crud.get_universe(session=session, id=universe_id)
-    if not universe:
-        raise HTTPException(status_code=404, detail="Universe not found")
-    teams, count = crud.get_teams_by_universe(
+    """Retrieve teams, optionally filtered by universe."""
+    if universe_id is not None:
+        universe = crud.get_universe(session=session, id=universe_id)
+        if not universe:
+            raise HTTPException(status_code=404, detail="Universe not found")
+    teams, count = crud.get_teams(
         session=session, universe_id=universe_id, skip=skip, limit=limit
     )
     return TeamsPublic(data=teams, count=count)

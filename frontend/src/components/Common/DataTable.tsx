@@ -32,17 +32,53 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  /** For server-side pagination: total row count from the API */
+  totalCount?: number
+  /** For server-side pagination: current page index (0-based) */
+  pageIndex?: number
+  /** For server-side pagination: current page size */
+  pageSize?: number
+  /** For server-side pagination: callback when page/size changes */
+  onPaginationChange?: (pageIndex: number, pageSize: number) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  totalCount,
+  pageIndex: controlledPageIndex,
+  pageSize: controlledPageSize,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
+  const isServerSide = totalCount !== undefined
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(isServerSide
+      ? {
+          manualPagination: true,
+          pageCount: Math.ceil(totalCount / (controlledPageSize ?? 10)),
+          state: {
+            pagination: {
+              pageIndex: controlledPageIndex ?? 0,
+              pageSize: controlledPageSize ?? 10,
+            },
+          },
+          onPaginationChange: (updater) => {
+            const current = {
+              pageIndex: controlledPageIndex ?? 0,
+              pageSize: controlledPageSize ?? 10,
+            }
+            const next =
+              typeof updater === "function" ? updater(current) : updater
+            onPaginationChange?.(next.pageIndex, next.pageSize)
+          },
+        }
+      : {
+          getPaginationRowModel: getPaginationRowModel(),
+        }),
   })
 
   return (
@@ -102,10 +138,12 @@ export function DataTable<TData, TValue>({
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) *
                   table.getState().pagination.pageSize,
-                data.length,
+                totalCount ?? data.length,
               )}{" "}
               of{" "}
-              <span className="font-medium text-foreground">{data.length}</span>{" "}
+              <span className="font-medium text-foreground">
+                {totalCount ?? data.length}
+              </span>{" "}
               entries
             </div>
             <div className="flex items-center gap-x-2">

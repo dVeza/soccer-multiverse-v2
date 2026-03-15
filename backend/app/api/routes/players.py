@@ -19,15 +19,16 @@ router = APIRouter(prefix="/players", tags=["players"])
 @router.get("/", response_model=PlayersPublic)
 def read_players(
     session: SessionDep,
-    universe_id: uuid.UUID,
+    universe_id: uuid.UUID | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """Retrieve players for a universe."""
-    universe = crud.get_universe(session=session, id=universe_id)
-    if not universe:
-        raise HTTPException(status_code=404, detail="Universe not found")
-    players, count = crud.get_players_by_universe(
+    """Retrieve players, optionally filtered by universe."""
+    if universe_id is not None:
+        universe = crud.get_universe(session=session, id=universe_id)
+        if not universe:
+            raise HTTPException(status_code=404, detail="Universe not found")
+    players, count = crud.get_players(
         session=session, universe_id=universe_id, skip=skip, limit=limit
     )
     return PlayersPublic(data=players, count=count)

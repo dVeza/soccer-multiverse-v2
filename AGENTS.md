@@ -4,6 +4,8 @@
 
 Full-stack app built on the **FastAPI full-stack template**. FastAPI + SQLModel backend, React + TypeScript frontend, PostgreSQL database, all orchestrated with Docker Compose.
 
+The domain is a "soccer multiverse" — you can create universes (e.g. Pokemon, Star Wars), import characters from external APIs as players, and generate teams where players are assigned positions based on their physical attributes.
+
 - **Project name**: Soccer Multiverse 2
 - **Stack name**: `soccer-multiverse2`
 - **Default superuser**: `admin@example.com` / `admin`
@@ -25,26 +27,44 @@ Full-stack app built on the **FastAPI full-stack template**. FastAPI + SQLModel 
 ├── backend/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── routes/        # API route handlers (items, users, login, utils, private)
+│   │   │   ├── routes/        # API route handlers
+│   │   │   │   ├── universes.py  # Universe CRUD endpoints
+│   │   │   │   ├── players.py    # Player CRUD endpoints
+│   │   │   │   ├── teams.py      # Team endpoints (list, get, generate, delete)
+│   │   │   │   ├── users.py      # User management
+│   │   │   │   ├── login.py      # Auth endpoints
+│   │   │   │   ├── utils.py      # Health check, etc.
+│   │   │   │   └── private.py    # Dev-only endpoints (local env)
 │   │   │   ├── deps.py        # Dependency injection (SessionDep, CurrentUser, etc.)
 │   │   │   └── main.py        # APIRouter aggregation
+│   │   ├── services/
+│   │   │   ├── team_generator.py     # Assigns players to positions by physical attributes
+│   │   │   └── external_players.py   # Fetches players from Pokemon/Star Wars APIs
 │   │   ├── core/
 │   │   │   ├── config.py      # Settings from env / .env (pydantic-settings)
 │   │   │   ├── db.py          # SQLModel engine + init_db
 │   │   │   └── security.py    # Password hashing (argon2/bcrypt), JWT creation
 │   │   ├── alembic/           # DB migrations
 │   │   ├── email-templates/   # MJML source + built HTML email templates
-│   │   ├── models.py          # SQLModel table & schema models (User, Item, etc.)
-│   │   ├── crud.py            # CRUD operations
+│   │   ├── models.py          # SQLModel table & schema models
+│   │   ├── crud.py            # CRUD operations for all entities
 │   │   ├── main.py            # FastAPI app creation
+│   │   ├── import_players.py  # Management command: import players from external APIs
+│   │   ├── initial_data.py    # Management command: seed superuser
 │   │   └── utils.py           # Email sending utilities
-│   ├── tests/                 # pytest tests mirroring app structure
+│   ├── tests/
+│   │   ├── conftest.py        # Session-scoped DB fixture, TestClient, auth headers
+│   │   ├── api/routes/        # API endpoint tests (login, users, private)
+│   │   ├── crud/              # CRUD function tests (user, universe, player, team)
+│   │   ├── services/          # Service tests (team_generator)
+│   │   ├── utils/             # Test helpers (random data, auth, universe/player factories)
+│   │   └── scripts/           # Pre-start script tests
 │   ├── scripts/               # prestart.sh, test.sh, lint.sh, format.sh
 │   └── pyproject.toml         # Python deps, ruff/mypy/coverage config
 ├── frontend/
 │   ├── src/
 │   │   ├── client/            # Auto-generated OpenAPI client (DO NOT edit manually)
-│   │   ├── components/        # UI components (Admin, Items, UserSettings, Common, ui/)
+│   │   ├── components/        # UI components (Admin, UserSettings, Common, ui/)
 │   │   ├── hooks/             # Custom React hooks (useAuth, useCustomToast, etc.)
 │   │   ├── routes/            # TanStack Router file-based routes
 │   │   └── main.tsx           # App entry point
@@ -54,8 +74,8 @@ Full-stack app built on the **FastAPI full-stack template**. FastAPI + SQLModel 
 │   ├── generate-client.sh     # Regenerates frontend OpenAPI client from backend
 │   ├── test.sh                # Full Docker-based test run
 │   └── test-local.sh          # Local Docker-based test run
-├── compose.yml                # Production-like Docker Compose
-├── compose.override.yml       # Dev overrides (volume mounts, live reload)
+├── compose.yml                # Production Docker Compose (prestart runs migrations + seed)
+├── compose.override.yml       # Dev overrides (volume mount, prestart skipped)
 ├── .env                       # Environment variables (loaded by Docker Compose & backend)
 └── .pre-commit-config.yaml    # prek/pre-commit hooks config
 ```
@@ -65,8 +85,8 @@ Full-stack app built on the **FastAPI full-stack template**. FastAPI + SQLModel 
 ### Docker Compose (full stack)
 
 ```bash
-# Start the full stack with live reload (watch mode)
-docker compose watch
+# Start all services (dev mode — backend has volume mount, prestart skipped)
+docker compose up -d
 
 # View logs (all services or specific)
 docker compose logs
@@ -82,6 +102,9 @@ docker compose down -v --remove-orphans
 
 # Shell into the running backend container
 docker compose exec backend bash
+
+# Rebuild backend after Dockerfile/dependency changes
+docker compose up -d backend --build
 ```
 
 ### Backend (Python / FastAPI)
@@ -115,21 +138,29 @@ cd backend && bash scripts/lint.sh
 ### Database Migrations (Alembic)
 
 ```bash
-# Run inside the backend container (or locally with DB access)
-docker compose exec backend bash
-
+# All alembic commands run inside the backend container
 # Create a new migration after model changes
-alembic revision --autogenerate -m "Describe the change"
+docker compose exec backend alembic revision --autogenerate -m "Describe the change"
 
 # Apply migrations
-alembic upgrade head
+docker compose exec backend alembic upgrade head
 
 # Downgrade one revision
-alembic downgrade -1
+docker compose exec backend alembic downgrade -1
 
 # View migration history
-alembic history
-alembic current
+docker compose exec backend alembic history
+docker compose exec backend alembic current
+```
+
+### Management Commands
+
+```bash
+# Seed initial superuser (runs automatically via prestart in production)
+docker compose exec backend python app/initial_data.py
+
+# Import players from external APIs (Pokemon + Star Wars)
+docker compose exec backend python app/import_players.py
 ```
 
 ### Frontend (React / TypeScript)
@@ -166,27 +197,59 @@ cd backend && uv run prek install -f
 cd backend && uv run prek run --all-files
 ```
 
+## Domain Model
+
+### Entities
+
+- **Universe** — a named universe (e.g. "Pokemon", "Star Wars") that contains players and teams
+- **Player** — a character with physical attributes (name, height, weight), belongs to a universe, optionally assigned to a team with a position
+- **Team** — a generated team of 5 players (1 goalie + defenders + attackers), belongs to a universe
+- **Position** — enum: `GOALIE`, `DEFENCE`, `OFFENCE`
+
+### Relationships
+
+```
+Universe ──1:N──> Player
+Universe ──1:N──> Team
+Team     ──1:N──> Player (with position assignment)
+```
+
+### Team Generation Logic (`backend/app/services/team_generator.py`)
+
+The `generate_team()` function takes a universe_id and a configuration (defenders + attackers = 4), fetches random unassigned players, and assigns positions based on physical attributes:
+1. **Goalie** — tallest player
+2. **Defenders** — heaviest remaining players
+3. **Attackers** — shortest remaining players
+
+### External Data Import (`backend/app/services/external_players.py`)
+
+- `fetch_pokemon_players()` — fetches from PokeAPI (capped at 150), converts height (decimetres→cm) and weight (hectograms→kg)
+- `fetch_starwars_players()` — fetches from SWAPI (all ~82 characters), handles "unknown" values with defaults
+
 ## Development Workflow
 
 ### Adding a New Model / Endpoint
 
 1. **Define the model** in `backend/app/models.py` — create the SQLModel table class and request/response schemas
-2. **Create migration**: `alembic revision --autogenerate -m "Add MyModel"` then `alembic upgrade head`
-3. **Add CRUD functions** in `backend/app/crud.py`
-4. **Create route file** in `backend/app/api/routes/` and register it in `backend/app/api/main.py`
-5. **Regenerate frontend client**: `bash scripts/generate-client.sh`
-6. **Build frontend components** using the generated client types
+2. **Add CRUD functions** in `backend/app/crud.py`
+3. **Create route file** in `backend/app/api/routes/` and register it in `backend/app/api/main.py`
+4. **Add tests** in `backend/tests/crud/` and/or `backend/tests/api/routes/`
+5. **Create migration**: `docker compose exec backend alembic revision --autogenerate -m "Add MyModel"` then `docker compose exec backend alembic upgrade head`
+6. **Regenerate frontend client**: `bash scripts/generate-client.sh`
+7. **Build frontend components** using the generated client types
 
 ### Model Pattern (SQLModel)
 
-The template follows a consistent pattern for each entity:
+The project follows a consistent pattern for each entity:
 
 - `EntityBase(SQLModel)` — shared fields (used as base for API schemas + DB model)
 - `EntityCreate(EntityBase)` — fields for creation endpoint
-- `EntityUpdate(EntityBase)` — fields for update (all optional)
-- `Entity(EntityBase, table=True)` — the DB table model (adds `id`, `created_at`, relationships)
-- `EntityPublic(EntityBase)` — response schema (adds `id`)
+- `EntityUpdate(SQLModel)` — fields for update (all optional, independent base to allow partial updates)
+- `Entity(ModelBase, EntityBase, table=True)` — the DB table model (inherits `id`, `created_at`, `updated_at` from `ModelBase`)
+- `EntityPublic(EntityBase)` — response schema (adds `id`, `created_at`)
 - `EntitiesPublic(SQLModel)` — paginated list response (`data: list[EntityPublic]`, `count: int`)
+
+`ModelBase` provides: `id` (UUID PK), `created_at` (datetime UTC), `updated_at` (datetime UTC with onupdate).
 
 ### Dependency Injection (backend/app/api/deps.py)
 
@@ -202,6 +265,14 @@ The `frontend/src/client/` directory is **auto-generated** from the backend Open
 ```bash
 bash scripts/generate-client.sh
 ```
+
+## Docker Compose Notes
+
+### Local Dev Overrides (`compose.override.yml`)
+
+- **Backend volume mount**: `./backend:/app/backend` — bidirectional sync, so files generated inside the container (e.g. alembic migrations) appear on the host
+- **Prestart skipped**: overridden to `echo` — in local dev, run migrations and seeding manually instead of at boot
+- **No `docker compose watch` needed**: the volume mount + `--reload` flag handle live reload
 
 ## Local URLs
 
@@ -232,5 +303,14 @@ Settings are loaded via `pydantic-settings` in `backend/app/core/config.py`. The
 - **TypeScript/JS**: formatted and linted with `biome`
 - **API prefix**: all routes are under `/api/v1/`
 - **UUIDs**: all primary keys are `uuid.UUID` (not auto-increment integers)
-- **Timestamps**: `created_at` fields use `datetime` with UTC timezone
+- **Timestamps**: `created_at` and `updated_at` use `datetime` with UTC timezone
 - **Password hashing**: argon2 (primary) with bcrypt fallback via `pwdlib`
+- **HTTP client**: use `httpx` (not `requests`) — it's in the project dependencies
+- **CRUD functions**: use keyword-only args (`*`), take `session: Session` as first param, follow existing patterns in `crud.py`
+- **Test pattern**: tests use the `db: Session` fixture from `conftest.py`, create data with random/unique values via helpers in `tests/utils/`
+
+## Gotchas
+
+- **PostgreSQL reserved words**: `position` is a reserved word in PostgreSQL. The `Player.position` column uses a custom enum type name (`playerposition`) to avoid the `position position` SQL syntax error. Be careful with column names — check against [PostgreSQL reserved words](https://www.postgresql.org/docs/current/sql-keywords-appendix.html).
+- **Alembic autogenerate**: always review generated migration files before applying. Autogenerate doesn't handle everything (e.g. column quoting, data migrations, enum type renaming).
+- **Test cleanup order**: `conftest.py` deletes tables in FK order: Player → Team → Universe → User. If you add new models with FK relationships, update the cleanup order.

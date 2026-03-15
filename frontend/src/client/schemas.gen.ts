@@ -71,61 +71,115 @@ export const HTTPValidationErrorSchema = {
     title: 'HTTPValidationError'
 } as const;
 
-export const ItemCreateSchema = {
+export const MatchCreateSchema = {
     properties: {
-        title: {
+        home_team_id: {
             type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Title'
+            format: 'uuid',
+            title: 'Home Team Id'
         },
-        description: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description'
+        away_team_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Away Team Id'
         }
     },
     type: 'object',
-    required: ['title'],
-    title: 'ItemCreate'
+    required: ['home_team_id', 'away_team_id'],
+    title: 'MatchCreate'
 } as const;
 
-export const ItemPublicSchema = {
+export const MatchEventPublicSchema = {
     properties: {
-        title: {
+        id: {
             type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Title'
+            format: 'uuid',
+            title: 'Id'
+        },
+        match_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Match Id'
+        },
+        minute: {
+            type: 'integer',
+            title: 'Minute'
+        },
+        event_type: {
+            '$ref': '#/components/schemas/MatchEventType'
         },
         description: {
+            type: 'string',
+            title: 'Description'
+        },
+        player_id: {
             anyOf: [
                 {
                     type: 'string',
-                    maxLength: 255
+                    format: 'uuid'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Description'
+            title: 'Player Id'
+        },
+        home_score: {
+            type: 'integer',
+            title: 'Home Score',
+            default: 0
+        },
+        away_score: {
+            type: 'integer',
+            title: 'Away Score',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['id', 'match_id', 'minute', 'event_type', 'description'],
+    title: 'MatchEventPublic'
+} as const;
+
+export const MatchEventTypeSchema = {
+    type: 'string',
+    enum: ['KICKOFF', 'ATTACK', 'SHOT', 'GOAL', 'SAVE', 'TACKLE', 'FOUL', 'HALFTIME', 'FULLTIME'],
+    title: 'MatchEventType'
+} as const;
+
+export const MatchPublicSchema = {
+    properties: {
+        home_score: {
+            type: 'integer',
+            title: 'Home Score',
+            default: 0
+        },
+        away_score: {
+            type: 'integer',
+            title: 'Away Score',
+            default: 0
         },
         id: {
             type: 'string',
             format: 'uuid',
             title: 'Id'
         },
-        owner_id: {
+        universe_id: {
             type: 'string',
             format: 'uuid',
-            title: 'Owner Id'
+            title: 'Universe Id'
+        },
+        home_team_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Home Team Id'
+        },
+        away_team_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Away Team Id'
+        },
+        status: {
+            '$ref': '#/components/schemas/MatchStatus'
         },
         created_at: {
             anyOf: [
@@ -141,47 +195,102 @@ export const ItemPublicSchema = {
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id'],
-    title: 'ItemPublic'
+    required: ['id', 'universe_id', 'home_team_id', 'away_team_id', 'status'],
+    title: 'MatchPublic'
 } as const;
 
-export const ItemUpdateSchema = {
+export const MatchPublicWithDetailsSchema = {
     properties: {
-        title: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 255,
-                    minLength: 1
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Title'
+        home_score: {
+            type: 'integer',
+            title: 'Home Score',
+            default: 0
         },
-        description: {
+        away_score: {
+            type: 'integer',
+            title: 'Away Score',
+            default: 0
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        universe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Universe Id'
+        },
+        home_team_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Home Team Id'
+        },
+        away_team_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Away Team Id'
+        },
+        status: {
+            '$ref': '#/components/schemas/MatchStatus'
+        },
+        created_at: {
             anyOf: [
                 {
                     type: 'string',
-                    maxLength: 255
+                    format: 'date-time'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Description'
+            title: 'Created At'
+        },
+        home_team: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/TeamPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        away_team: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/TeamPublic'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        events: {
+            items: {
+                '$ref': '#/components/schemas/MatchEventPublic'
+            },
+            type: 'array',
+            title: 'Events',
+            default: []
         }
     },
     type: 'object',
-    title: 'ItemUpdate'
+    required: ['id', 'universe_id', 'home_team_id', 'away_team_id', 'status'],
+    title: 'MatchPublicWithDetails'
 } as const;
 
-export const ItemsPublicSchema = {
+export const MatchStatusSchema = {
+    type: 'string',
+    enum: ['PENDING', 'LIVE', 'FINISHED'],
+    title: 'MatchStatus'
+} as const;
+
+export const MatchesPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/ItemPublic'
+                '$ref': '#/components/schemas/MatchPublic'
             },
             type: 'array',
             title: 'Data'
@@ -193,7 +302,7 @@ export const ItemsPublicSchema = {
     },
     type: 'object',
     required: ['data', 'count'],
-    title: 'ItemsPublic'
+    title: 'MatchesPublic'
 } as const;
 
 export const MessageSchema = {
@@ -226,6 +335,163 @@ export const NewPasswordSchema = {
     title: 'NewPassword'
 } as const;
 
+export const PlayerCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        height: {
+            type: 'number',
+            title: 'Height'
+        },
+        weight: {
+            type: 'number',
+            title: 'Weight'
+        },
+        universe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Universe Id'
+        }
+    },
+    type: 'object',
+    required: ['name', 'height', 'weight', 'universe_id'],
+    title: 'PlayerCreate'
+} as const;
+
+export const PlayerPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        height: {
+            type: 'number',
+            title: 'Height'
+        },
+        weight: {
+            type: 'number',
+            title: 'Weight'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        universe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Universe Id'
+        },
+        team_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Team Id'
+        },
+        position: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/Position'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['name', 'height', 'weight', 'id', 'universe_id'],
+    title: 'PlayerPublic'
+} as const;
+
+export const PlayerUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        height: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Height'
+        },
+        weight: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Weight'
+        }
+    },
+    type: 'object',
+    title: 'PlayerUpdate'
+} as const;
+
+export const PlayersPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/PlayerPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'PlayersPublic'
+} as const;
+
+export const PositionSchema = {
+    type: 'string',
+    enum: ['GOALIE', 'DEFENCE', 'OFFENCE'],
+    title: 'Position'
+} as const;
+
 export const PrivateUserCreateSchema = {
     properties: {
         email: {
@@ -251,6 +517,120 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const TeamConfigurationRequestSchema = {
+    properties: {
+        defenders: {
+            type: 'integer',
+            title: 'Defenders',
+            default: 2
+        },
+        attackers: {
+            type: 'integer',
+            title: 'Attackers',
+            default: 2
+        }
+    },
+    type: 'object',
+    title: 'TeamConfigurationRequest'
+} as const;
+
+export const TeamPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        universe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Universe Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'universe_id'],
+    title: 'TeamPublic'
+} as const;
+
+export const TeamPublicWithPlayersSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        universe_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Universe Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        },
+        players: {
+            items: {
+                '$ref': '#/components/schemas/PlayerPublic'
+            },
+            type: 'array',
+            title: 'Players',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'id', 'universe_id'],
+    title: 'TeamPublicWithPlayers'
+} as const;
+
+export const TeamsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/TeamPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'TeamsPublic'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -266,6 +646,123 @@ export const TokenSchema = {
     type: 'object',
     required: ['access_token'],
     title: 'Token'
+} as const;
+
+export const UniverseCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'UniverseCreate'
+} as const;
+
+export const UniversePublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['name', 'id'],
+    title: 'UniversePublic'
+} as const;
+
+export const UniverseUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    title: 'UniverseUpdate'
+} as const;
+
+export const UniversesPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/UniversePublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'UniversesPublic'
 } as const;
 
 export const UpdatePasswordSchema = {

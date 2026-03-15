@@ -204,6 +204,121 @@ class TeamsPublic(SQLModel):
     count: int
 
 
+# ==================== Match Models ====================
+
+
+class MatchStatus(str, Enum):
+    PENDING = "PENDING"
+    LIVE = "LIVE"
+    FINISHED = "FINISHED"
+
+
+class MatchEventType(str, Enum):
+    KICKOFF = "KICKOFF"
+    ATTACK = "ATTACK"
+    SHOT = "SHOT"
+    GOAL = "GOAL"
+    SAVE = "SAVE"
+    TACKLE = "TACKLE"
+    FOUL = "FOUL"
+    HALFTIME = "HALFTIME"
+    FULLTIME = "FULLTIME"
+
+
+class MatchBase(SQLModel):
+    home_score: int = 0
+    away_score: int = 0
+
+
+class MatchCreate(SQLModel):
+    home_team_id: uuid.UUID
+    away_team_id: uuid.UUID
+
+
+class Match(ModelBase, MatchBase, table=True):
+    __tablename__ = "matches"
+
+    universe_id: uuid.UUID = Field(foreign_key="universe.id")
+    home_team_id: uuid.UUID = Field(foreign_key="team.id")
+    away_team_id: uuid.UUID = Field(foreign_key="team.id")
+    status: MatchStatus = Field(
+        default=MatchStatus.PENDING,
+        sa_column=Column(
+            SAEnum(MatchStatus, name="matchstatus"),
+            nullable=False,
+            default=MatchStatus.PENDING,
+        ),
+    )
+    universe: Universe = Relationship()
+    home_team: Team = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Match.home_team_id]"}
+    )
+    away_team: Team = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Match.away_team_id]"}
+    )
+    events: list["MatchEvent"] = Relationship(
+        back_populates="match", cascade_delete=True
+    )
+
+
+class MatchEvent(ModelBase, table=True):
+    __tablename__ = "matchevent"
+
+    match_id: uuid.UUID = Field(foreign_key="matches.id")
+    minute: int
+    event_type: MatchEventType = Field(
+        sa_column=Column(
+            SAEnum(MatchEventType, name="matcheventtype"), nullable=False
+        ),
+    )
+    description: str = Field(max_length=500)
+    player_id: uuid.UUID | None = Field(default=None, foreign_key="player.id")
+    home_score: int = 0
+    away_score: int = 0
+    match: Match = Relationship(back_populates="events")
+    player: Player | None = Relationship()
+
+
+class MatchEventPublic(SQLModel):
+    id: uuid.UUID
+    match_id: uuid.UUID
+    minute: int
+    event_type: MatchEventType
+    description: str
+    player_id: uuid.UUID | None = None
+    home_score: int = 0
+    away_score: int = 0
+
+
+class MatchPublic(MatchBase):
+    id: uuid.UUID
+    universe_id: uuid.UUID
+    home_team_id: uuid.UUID
+    away_team_id: uuid.UUID
+    status: MatchStatus
+    created_at: datetime | None = None
+
+
+class MatchPublicWithDetails(MatchPublic):
+    home_team: TeamPublic | None = None
+    away_team: TeamPublic | None = None
+    events: list[MatchEventPublic] = []
+
+
+class MatchesPublic(SQLModel):
+    data: list[MatchPublic]
+    count: int
+
+
+class MatchEventSSE(SQLModel):
+    event_type: MatchEventType
+    minute: int
+    description: str
+    home_score: int
+    away_score: int
+    player_id: uuid.UUID | None = None
+
+
 # ==================== Team Configuration Request ====================
 
 

@@ -1,11 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { type ItemPublic, ItemsService } from "@/client"
+import { TeamsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,8 +15,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
@@ -30,19 +30,23 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().optional(),
-})
+const formSchema = z
+  .object({
+    defenders: z.number().int().min(0).max(4),
+    attackers: z.number().int().min(0).max(4),
+  })
+  .refine((data) => data.defenders + data.attackers === 4, {
+    message: "Defenders + attackers must equal 4",
+    path: ["attackers"],
+  })
 
 type FormData = z.infer<typeof formSchema>
 
-interface EditItemProps {
-  item: ItemPublic
-  onSuccess: () => void
+interface GenerateTeamProps {
+  universeId: string
 }
 
-const EditItem = ({ item, onSuccess }: EditItemProps) => {
+export function GenerateTeam({ universeId }: GenerateTeamProps) {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -52,22 +56,33 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      title: item.title,
-      description: item.description ?? undefined,
+      defenders: 2,
+      attackers: 2,
     },
   })
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      ItemsService.updateItem({ id: item.id, requestBody: data }),
+      TeamsService.generateTeamEndpoint({
+        universeId,
+        requestBody: {
+          defenders: data.defenders,
+          attackers: data.attackers,
+        },
+      }),
     onSuccess: () => {
-      showSuccessToast("Item updated successfully")
+      showSuccessToast("Team generated successfully")
+      form.reset()
       setIsOpen(false)
-      onSuccess()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({
+        queryKey: ["teams", universeId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["players", universeId],
+      })
     },
   })
 
@@ -77,33 +92,37 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Pencil />
-        Edit Item
-      </DropdownMenuItem>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2" />
+          Generate Team
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Generate Team</DialogTitle>
+          <DialogDescription>
+            Configure the team formation. Defenders + attackers must equal 4 (1
+            goalie is always included).
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>Edit Item</DialogTitle>
-              <DialogDescription>
-                Update the item details below.
-              </DialogDescription>
-            </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="title"
+                name="defenders"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Title <span className="text-destructive">*</span>
-                    </FormLabel>
+                    <FormLabel>Defenders</FormLabel>
                     <FormControl>
-                      <Input placeholder="Title" type="text" {...field} />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={4}
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -112,12 +131,18 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
 
               <FormField
                 control={form.control}
-                name="description"
+                name="attackers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Attackers</FormLabel>
                     <FormControl>
-                      <Input placeholder="Description" type="text" {...field} />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={4}
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -132,7 +157,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
                 </Button>
               </DialogClose>
               <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+                Generate
               </LoadingButton>
             </DialogFooter>
           </form>
@@ -141,5 +166,3 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
     </Dialog>
   )
 }
-
-export default EditItem

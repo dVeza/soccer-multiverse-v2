@@ -13,28 +13,55 @@ export type HTTPValidationError = {
     detail?: Array<ValidationError>;
 };
 
-export type ItemCreate = {
-    title: string;
-    description?: (string | null);
+export type MatchCreate = {
+    home_team_id: string;
+    away_team_id: string;
 };
 
-export type ItemPublic = {
-    title: string;
-    description?: (string | null);
-    id: string;
-    owner_id: string;
-    created_at?: (string | null);
-};
-
-export type ItemsPublic = {
-    data: Array<ItemPublic>;
+export type MatchesPublic = {
+    data: Array<MatchPublic>;
     count: number;
 };
 
-export type ItemUpdate = {
-    title?: (string | null);
-    description?: (string | null);
+export type MatchEventPublic = {
+    id: string;
+    match_id: string;
+    minute: number;
+    event_type: MatchEventType;
+    description: string;
+    player_id?: (string | null);
+    home_score?: number;
+    away_score?: number;
 };
+
+export type MatchEventType = 'KICKOFF' | 'ATTACK' | 'SHOT' | 'GOAL' | 'SAVE' | 'TACKLE' | 'FOUL' | 'HALFTIME' | 'FULLTIME';
+
+export type MatchPublic = {
+    home_score?: number;
+    away_score?: number;
+    id: string;
+    universe_id: string;
+    home_team_id: string;
+    away_team_id: string;
+    status: MatchStatus;
+    created_at?: (string | null);
+};
+
+export type MatchPublicWithDetails = {
+    home_score?: number;
+    away_score?: number;
+    id: string;
+    universe_id: string;
+    home_team_id: string;
+    away_team_id: string;
+    status: MatchStatus;
+    created_at?: (string | null);
+    home_team?: (TeamPublic | null);
+    away_team?: (TeamPublic | null);
+    events?: Array<MatchEventPublic>;
+};
+
+export type MatchStatus = 'PENDING' | 'LIVE' | 'FINISHED';
 
 export type Message = {
     message: string;
@@ -45,6 +72,37 @@ export type NewPassword = {
     new_password: string;
 };
 
+export type PlayerCreate = {
+    name: string;
+    height: number;
+    weight: number;
+    universe_id: string;
+};
+
+export type PlayerPublic = {
+    name: string;
+    height: number;
+    weight: number;
+    id: string;
+    universe_id: string;
+    team_id?: (string | null);
+    position?: (Position | null);
+    created_at?: (string | null);
+};
+
+export type PlayersPublic = {
+    data: Array<PlayerPublic>;
+    count: number;
+};
+
+export type PlayerUpdate = {
+    name?: (string | null);
+    height?: (number | null);
+    weight?: (number | null);
+};
+
+export type Position = 'GOALIE' | 'DEFENCE' | 'OFFENCE';
+
 export type PrivateUserCreate = {
     email: string;
     password: string;
@@ -52,9 +110,56 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type TeamConfigurationRequest = {
+    defenders?: number;
+    attackers?: number;
+};
+
+export type TeamPublic = {
+    name: string;
+    id: string;
+    universe_id: string;
+    created_at?: (string | null);
+};
+
+export type TeamPublicWithPlayers = {
+    name: string;
+    id: string;
+    universe_id: string;
+    created_at?: (string | null);
+    players?: Array<PlayerPublic>;
+};
+
+export type TeamsPublic = {
+    data: Array<TeamPublic>;
+    count: number;
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
+};
+
+export type UniverseCreate = {
+    name: string;
+    description?: (string | null);
+};
+
+export type UniversePublic = {
+    name: string;
+    description?: (string | null);
+    id: string;
+    created_at?: (string | null);
+};
+
+export type UniversesPublic = {
+    data: Array<UniversePublic>;
+    count: number;
+};
+
+export type UniverseUpdate = {
+    name?: (string | null);
+    description?: (string | null);
 };
 
 export type UpdatePassword = {
@@ -113,38 +218,6 @@ export type ValidationError = {
     };
 };
 
-export type ItemsReadItemsData = {
-    limit?: number;
-    skip?: number;
-};
-
-export type ItemsReadItemsResponse = (ItemsPublic);
-
-export type ItemsCreateItemData = {
-    requestBody: ItemCreate;
-};
-
-export type ItemsCreateItemResponse = (ItemPublic);
-
-export type ItemsReadItemData = {
-    id: string;
-};
-
-export type ItemsReadItemResponse = (ItemPublic);
-
-export type ItemsUpdateItemData = {
-    id: string;
-    requestBody: ItemUpdate;
-};
-
-export type ItemsUpdateItemResponse = (ItemPublic);
-
-export type ItemsDeleteItemData = {
-    id: string;
-};
-
-export type ItemsDeleteItemResponse = (Message);
-
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
 };
@@ -171,11 +244,129 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = (string);
 
+export type MatchesSimulateMatchEndpointData = {
+    requestBody: MatchCreate;
+};
+
+export type MatchesSimulateMatchEndpointResponse = (MatchPublic);
+
+export type MatchesReadMatchesData = {
+    limit?: number;
+    skip?: number;
+    universeId?: (string | null);
+};
+
+export type MatchesReadMatchesResponse = (MatchesPublic);
+
+export type MatchesReadMatchData = {
+    id: string;
+};
+
+export type MatchesReadMatchResponse = (MatchPublicWithDetails);
+
+export type MatchesStreamMatchEventsData = {
+    id: string;
+};
+
+export type MatchesStreamMatchEventsResponse = (unknown);
+
+export type PlayersReadPlayersData = {
+    limit?: number;
+    skip?: number;
+    universeId?: (string | null);
+};
+
+export type PlayersReadPlayersResponse = (PlayersPublic);
+
+export type PlayersCreatePlayerData = {
+    requestBody: PlayerCreate;
+};
+
+export type PlayersCreatePlayerResponse = (PlayerPublic);
+
+export type PlayersReadPlayerData = {
+    id: string;
+};
+
+export type PlayersReadPlayerResponse = (PlayerPublic);
+
+export type PlayersUpdatePlayerData = {
+    id: string;
+    requestBody: PlayerUpdate;
+};
+
+export type PlayersUpdatePlayerResponse = (PlayerPublic);
+
+export type PlayersDeletePlayerData = {
+    id: string;
+};
+
+export type PlayersDeletePlayerResponse = (Message);
+
 export type PrivateCreateUserData = {
     requestBody: PrivateUserCreate;
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type TeamsReadTeamsData = {
+    limit?: number;
+    skip?: number;
+    universeId?: (string | null);
+};
+
+export type TeamsReadTeamsResponse = (TeamsPublic);
+
+export type TeamsReadTeamData = {
+    id: string;
+};
+
+export type TeamsReadTeamResponse = (TeamPublicWithPlayers);
+
+export type TeamsDeleteTeamData = {
+    id: string;
+};
+
+export type TeamsDeleteTeamResponse = (Message);
+
+export type TeamsGenerateTeamEndpointData = {
+    requestBody?: (TeamConfigurationRequest | null);
+    universeId: string;
+};
+
+export type TeamsGenerateTeamEndpointResponse = (TeamPublicWithPlayers);
+
+export type UniversesReadUniversesData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type UniversesReadUniversesResponse = (UniversesPublic);
+
+export type UniversesCreateUniverseData = {
+    requestBody: UniverseCreate;
+};
+
+export type UniversesCreateUniverseResponse = (UniversePublic);
+
+export type UniversesReadUniverseData = {
+    id: string;
+};
+
+export type UniversesReadUniverseResponse = (UniversePublic);
+
+export type UniversesUpdateUniverseData = {
+    id: string;
+    requestBody: UniverseUpdate;
+};
+
+export type UniversesUpdateUniverseResponse = (UniversePublic);
+
+export type UniversesDeleteUniverseData = {
+    id: string;
+};
+
+export type UniversesDeleteUniverseResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;

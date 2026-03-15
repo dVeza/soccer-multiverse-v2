@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-import { ItemsService } from "@/client"
+import { TeamsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,61 +13,59 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
-interface DeleteItemProps {
+interface DeleteTeamProps {
   id: string
-  onSuccess: () => void
+  universeId: string
 }
 
-const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
+export function DeleteTeam({ id, universeId }: DeleteTeamProps) {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
-  const deleteItem = async (id: string) => {
-    await ItemsService.deleteItem({ id: id })
-  }
-
   const mutation = useMutation({
-    mutationFn: deleteItem,
+    mutationFn: () => TeamsService.deleteTeam({ id }),
     onSuccess: () => {
-      showSuccessToast("The item was deleted successfully")
+      showSuccessToast("Team deleted successfully")
       setIsOpen(false)
-      onSuccess()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries({
+        queryKey: ["teams", universeId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["players", universeId],
+      })
     },
   })
 
-  const onSubmit = async () => {
-    mutation.mutate(id)
+  const onSubmit = () => {
+    mutation.mutate()
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        variant="destructive"
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Trash2 />
-        Delete Item
-      </DropdownMenuItem>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Delete team</span>
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Delete Item</DialogTitle>
+            <DialogTitle>Delete Team</DialogTitle>
             <DialogDescription>
-              This item will be permanently deleted. Are you sure? You will not
-              be able to undo this action.
+              This team will be permanently deleted and its players will be
+              unassigned. Are you sure?
             </DialogDescription>
           </DialogHeader>
 
@@ -90,5 +88,3 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
     </Dialog>
   )
 }
-
-export default DeleteItem
