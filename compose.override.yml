@@ -55,6 +55,10 @@ services:
     ports:
       - "8080:8080"
 
+  prestart:
+    # In local dev, skip automatic migrations/seeding — run them manually
+    command: echo "Prestart skipped in local dev"
+
   backend:
     restart: "no"
     ports:
@@ -68,19 +72,8 @@ services:
       - run
       - --reload
       - "app/main.py"
-    develop:
-      watch:
-        - path: ./backend
-          action: sync
-          target: /app/backend
-          ignore:
-            - ./backend/.venv
-            - .venv
-        - path: ./backend/pyproject.toml
-          action: rebuild
-    # TODO: remove once coverage is done locally
     volumes:
-      - ./backend/htmlcov:/app/backend/htmlcov
+      - ./backend:/app/backend
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"

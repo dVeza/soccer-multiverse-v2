@@ -1,4 +1,4 @@
-# FastAPI Project - Backend
+# Soccer Multiverse App
 
 ## Requirements
 
