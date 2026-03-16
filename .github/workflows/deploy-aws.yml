@@ -1,0 +1,158 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+
+jobs:
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+  deploy-backend:
+    needs: determine-environment
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image (ARM64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPO_NAME }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPO_NAME }}:latest
+          platforms: linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run database migrations
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${{ vars.ECS_CLUSTER_ARN }}" \
+            --task-definition "${{ vars.MIGRATION_TASK_DEF_ARN }}" \
+            --launch-type FARGATE \
+            --network-configuration '{
+              "awsvpcConfiguration": {
+                "subnets": ${{ vars.PRIVATE_SUBNET_IDS }},
+                "securityGroups": ["${{ vars.MIGRATION_SG_ID }}"],
+                "assignPublicIp": "DISABLED"
+              }
+            }' \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "migration",
+                "image": "${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPO_NAME }}:${{ github.sha }}"
+              }]
+            }' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "Waiting for migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster "${{ vars.ECS_CLUSTER_ARN }}" \
+            --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "${{ vars.ECS_CLUSTER_ARN }}" \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migration failed with exit code: $EXIT_CODE"
+            exit 1
+          fi
+          echo "Migrations completed successfully"
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER_ARN }}" \
+            --service "${{ vars.ECS_SERVICE_NAME }}" \
+            --force-new-deployment \
+            --query 'service.serviceName' \
+            --output text
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster "${{ vars.ECS_CLUSTER_ARN }}" \
+            --services "${{ vars.ECS_SERVICE_NAME }}"
+
+  deploy-frontend:
+    needs: determine-environment
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: ""
+        run: bun run build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync frontend/dist/ "s3://${{ vars.FRONTEND_BUCKET_NAME }}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html"
+
+          aws s3 cp frontend/dist/index.html "s3://${{ vars.FRONTEND_BUCKET_NAME }}/index.html" \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/index.html"
